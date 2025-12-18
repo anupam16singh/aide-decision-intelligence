@@ -44,9 +44,6 @@ Final Strategy Returns
 ↓
 Benchmark Evaluation
 
-yaml
-Copy code
-
 Each layer has a **single responsibility**, making the system transparent and extensible.
 
 ---

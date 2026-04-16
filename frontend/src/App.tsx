@@ -3,7 +3,9 @@ import { useMemo, useState } from "react";
 import { AlertsPanel } from "./components/AlertsPanel";
 import { AQICard } from "./components/AQICard";
 import { CesiumTwin } from "./components/CesiumTwin";
+import { CityOverview } from "./components/CityOverview";
 import { Navbar } from "./components/Navbar";
+import { PollutantBreakdown } from "./components/PollutantBreakdown";
 import { PredictionChart } from "./components/PredictionChart";
 import { RecommendationPanel } from "./components/RecommendationPanel";
 import { StationList } from "./components/StationList";
@@ -28,28 +30,35 @@ export default function App() {
   const stationList = useMemo(() => Object.values(live.stations), [live.stations]);
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="relative z-10 flex flex-col h-screen bg-cmd-bg text-cmd-text">
       <Navbar
         regime={live.regime}
         connected={live.connected}
         lastTickAt={live.lastTickAt}
         stationCount={stationList.length}
+        stations={stationList}
+        selectedId={effectiveSelected}
+        onSelect={(id) => setSelectedId(id)}
       />
 
-      <main className="flex-1 grid grid-cols-12 gap-3 p-3 overflow-hidden">
-        <section className="col-span-12 lg:col-span-8 panel overflow-hidden flex flex-col min-h-0">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-cmd-border">
-            <div>
-              <div className="text-xs text-cmd-muted uppercase tracking-wider">
-                Digital Twin
-              </div>
-              <div className="text-sm">Delhi NCR — Cesium 3D Globe</div>
-            </div>
-            {selected && (
-              <div className="text-xs text-cmd-muted">
-                Selected: <span className="text-cmd-text">{selected.station_name}</span>
-              </div>
-            )}
+      <CityOverview
+        stations={stationList}
+        alerts={live.alerts}
+        recommendations={live.recommendations}
+        model={forecast?.model ?? null}
+        lastTickAt={live.lastTickAt}
+      />
+
+      <main className="flex-1 grid grid-cols-12 grid-rows-[minmax(0,1fr)_minmax(0,0.6fr)] gap-px bg-cmd-border overflow-hidden">
+        {/* Twin + analytics row */}
+        <section className="col-span-12 xl:col-span-7 row-span-1 bg-cmd-bg flex flex-col min-h-0">
+          <div className="panel-head border-b">
+            <span>00 · Digital Twin — Heat Overlay</span>
+            <span className="text-cmd-muted">
+              {selected
+                ? `Focus: ${selected.station_name.toUpperCase()}`
+                : "Click a station to focus"}
+            </span>
           </div>
           <div className="flex-1 min-h-0">
             <CesiumTwin
@@ -60,29 +69,49 @@ export default function App() {
           </div>
         </section>
 
-        <aside className="col-span-12 lg:col-span-4 flex flex-col gap-3 overflow-y-auto min-h-0 pr-1">
-          {selected ? (
-            <>
-              <AQICard reading={selected} />
-              <PredictionChart latest={selected} forecast={forecast} />
-              <RecommendationPanel
-                recommendations={live.recommendations}
-                filterStationId={effectiveSelected}
-              />
-            </>
-          ) : (
-            <div className="panel p-6 text-center text-cmd-muted">
-              Connecting to live feed…
-            </div>
-          )}
+        <aside className="col-span-12 xl:col-span-5 row-span-1 bg-cmd-bg overflow-y-auto min-h-0">
+          <div className="flex flex-col gap-px">
+            {selected ? (
+              <>
+                <AQICard reading={selected} />
+                <PredictionChart latest={selected} forecast={forecast} />
+                <PollutantBreakdown reading={selected} />
+                <RecommendationPanel
+                  recommendations={live.recommendations}
+                  filterStationId={effectiveSelected}
+                />
+              </>
+            ) : (
+              <div className="panel p-6 text-sm text-cmd-muted font-mono tracking-wide">
+                · Connecting to live feed ·
+              </div>
+            )}
+          </div>
+        </aside>
+
+        {/* Bottom row: station matrix + live feed */}
+        <section className="col-span-12 xl:col-span-7 row-span-1 bg-cmd-bg min-h-0">
           <StationList
             stations={stationList}
             selectedId={effectiveSelected}
             onSelect={(id) => setSelectedId(id)}
           />
+        </section>
+
+        <section className="col-span-12 xl:col-span-5 row-span-1 bg-cmd-bg min-h-0">
           <AlertsPanel alerts={live.alerts} />
-        </aside>
+        </section>
       </main>
+
+      <footer className="border-t border-cmd-border bg-cmd-bg px-4 py-1.5 flex items-center justify-between text-2xs font-mono text-cmd-muted tracking-[0.18em]">
+        <span>AIRTWIN // AIDE — REGIME-AWARE AIR QUALITY COMMAND</span>
+        <span>
+          {live.connected ? "◉ LIVE" : "○ OFFLINE"} · WS 7s ·{" "}
+          {live.lastTickAt
+            ? new Date(live.lastTickAt).toLocaleTimeString([], { hour12: false })
+            : "--:--:--"}
+        </span>
+      </footer>
     </div>
   );
 }

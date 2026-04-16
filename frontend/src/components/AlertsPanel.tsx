@@ -1,10 +1,10 @@
 import clsx from "clsx";
 import type { Alert } from "../lib/types";
 
-const SEV_COLOR: Record<Alert["severity"], string> = {
-  info: "text-cmd-accent border-cmd-accent/40",
-  warning: "text-amber-400 border-amber-500/40",
-  critical: "text-red-400 border-red-500/60",
+const SEV_META: Record<Alert["severity"], { tag: string; emphasis: boolean }> = {
+  info:     { tag: "INFO", emphasis: false },
+  warning:  { tag: "WARN", emphasis: true  },
+  critical: { tag: "CRIT", emphasis: true  },
 };
 
 interface Props {
@@ -12,29 +12,55 @@ interface Props {
 }
 
 export function AlertsPanel({ alerts }: Props) {
+  const sorted = [...alerts].sort(
+    (a, b) => +new Date(b.ts) - +new Date(a.ts),
+  );
   return (
-    <div className="panel p-4">
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-cmd-muted uppercase tracking-wider">Live Alerts</div>
-        <span className="chip text-cmd-muted">{alerts.length}</span>
+    <section className="panel corners h-full flex flex-col min-h-0">
+      <div className="panel-head">
+        <span>07 · Live Feed</span>
+        <span className="text-cmd-muted font-mono">
+          {sorted.length} events · rolling
+        </span>
       </div>
-      {alerts.length === 0 ? (
-        <div className="text-sm text-cmd-muted mt-3">All clear.</div>
+      {sorted.length === 0 ? (
+        <div className="px-4 py-6 text-sm text-cmd-muted">
+          All clear — no active alerts.
+        </div>
       ) : (
-        <ul className="mt-3 space-y-2 max-h-48 overflow-y-auto pr-1">
-          {alerts.map((a) => (
-            <li
-              key={a.id}
-              className={clsx("border rounded px-2 py-1 text-sm flex items-center justify-between", SEV_COLOR[a.severity])}
-            >
-              <span>{a.message}</span>
-              <span className="text-xs font-mono text-cmd-muted">
-                {new Date(a.ts).toLocaleTimeString()}
-              </span>
-            </li>
-          ))}
+        <ul className="flex-1 overflow-y-auto min-h-0">
+          {sorted.map((a) => {
+            const m = SEV_META[a.severity];
+            const ts = new Date(a.ts);
+            return (
+              <li
+                key={a.id}
+                className={clsx(
+                  "grid grid-cols-[80px_54px_1fr] items-start gap-2 px-3 py-1.5 border-b border-cmd-border font-mono text-2xs",
+                  m.emphasis ? "text-cmd-text" : "text-cmd-dim",
+                )}
+              >
+                <span className="text-cmd-muted">
+                  {ts.toLocaleTimeString([], { hour12: false })}
+                </span>
+                <span
+                  className={clsx(
+                    "px-1.5 py-0.5 border text-center tracking-[0.18em]",
+                    m.emphasis
+                      ? "border-cmd-bright text-cmd-bright"
+                      : "border-cmd-line text-cmd-muted",
+                  )}
+                >
+                  {m.tag}
+                </span>
+                <span className="truncate" title={a.message}>
+                  {a.message}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
-    </div>
+    </section>
   );
 }

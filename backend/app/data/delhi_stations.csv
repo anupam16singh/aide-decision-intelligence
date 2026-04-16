@@ -1,0 +1,13 @@
+station_id,station_name,lat,lng,zone,cpcb_code,baseline_pm25
+anand_vihar,Anand Vihar,28.6469,77.3159,traffic,DL001,220
+ito,ITO,28.6289,77.2411,traffic,DL002,195
+cp,Connaught Place,28.6328,77.2197,commercial,DL003,150
+rohini,Rohini,28.7499,77.0565,residential,DL004,170
+lodhi,Lodhi Garden,28.5918,77.2273,greenbelt,DL005,110
+dwarka,Dwarka Sector 8,28.5710,77.0715,residential,DL006,160
+punjabi_bagh,Punjabi Bagh,28.6740,77.1319,residential,DL007,180
+rk_puram,R K Puram,28.5634,77.1720,residential,DL008,165
+jahangirpuri,Jahangirpuri,28.7326,77.1701,industrial,DL009,240
+shadipur,Shadipur,28.6517,77.1471,traffic,DL010,200
+najafgarh,Najafgarh,28.6097,76.9806,residential,DL011,175
+nehru_nagar,Nehru Nagar,28.5677,77.2508,residential,DL012,185

@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-cmd-panel border border-cmd-border rounded-lg shadow-lg;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 text-xs font-mono uppercase
+      tracking-wider px-2 py-1 rounded border border-cmd-border;
+  }
+}
+
+/* Cesium overrides — hide default widgets we don't need */
+.cesium-viewer-toolbar,
+.cesium-viewer-fullscreenContainer,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-bottom {
+  display: none !important;
+}
+.cesium-viewer-geocoderContainer {
+  display: none !important;
+}

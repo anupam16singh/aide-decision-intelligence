@@ -1,6 +1,9 @@
 import clsx from "clsx";
-import { colorFor } from "../lib/aqi";
+import { useState } from "react";
+import { bandFor } from "../lib/aqi";
 import type { StationReading } from "../lib/types";
+
+type SortKey = "aqi" | "pm25" | "pm10" | "no2" | "name";
 
 interface Props {
   stations: StationReading[];
@@ -9,41 +12,92 @@ interface Props {
 }
 
 export function StationList({ stations, selectedId, onSelect }: Props) {
-  const sorted = [...stations].sort((a, b) => b.aqi - a.aqi);
+  const [sort, setSort] = useState<SortKey>("aqi");
+
+  const sorted = [...stations].sort((a, b) => {
+    if (sort === "name") return a.station_name.localeCompare(b.station_name);
+    return (b[sort] as number) - (a[sort] as number);
+  });
+
   return (
-    <div className="panel p-3">
-      <div className="text-xs text-cmd-muted uppercase tracking-wider mb-2">
-        Stations (sorted by AQI)
+    <section className="panel corners h-full flex flex-col min-h-0">
+      <div className="panel-head">
+        <span>06 · Station Matrix</span>
+        <div className="flex items-center gap-1">
+          {(["aqi", "pm25", "pm10", "no2", "name"] as SortKey[]).map((k) => (
+            <button
+              key={k}
+              onClick={() => setSort(k)}
+              className={clsx(
+                "px-1.5 py-0.5 border text-2xs tracking-[0.18em] uppercase",
+                sort === k
+                  ? "border-cmd-bright text-cmd-bright"
+                  : "border-cmd-line text-cmd-muted hover:text-cmd-text",
+              )}
+            >
+              {k}
+            </button>
+          ))}
+        </div>
       </div>
-      <ul className="space-y-1 max-h-64 overflow-y-auto pr-1">
+
+      <div className="grid grid-cols-[20px_1fr_64px_56px_56px_56px] gap-2 px-3 py-1.5 text-2xs font-mono uppercase tracking-[0.18em] text-cmd-muted border-b border-cmd-border">
+        <span />
+        <span>Station</span>
+        <span className="text-right">AQI</span>
+        <span className="text-right">PM2.5</span>
+        <span className="text-right">PM10</span>
+        <span className="text-right">NO₂</span>
+      </div>
+
+      <ul className="flex-1 overflow-y-auto min-h-0">
         {sorted.map((s) => {
+          const b = bandFor(s.aqi);
           const active = selectedId === s.station_id;
           return (
             <li key={s.station_id}>
               <button
                 onClick={() => onSelect(s.station_id)}
                 className={clsx(
-                  "w-full flex items-center justify-between px-2 py-1 rounded text-sm transition",
+                  "w-full grid grid-cols-[20px_1fr_64px_56px_56px_56px] gap-2 px-3 py-1.5 text-left items-center border-b border-cmd-border text-sm",
                   active
-                    ? "bg-cmd-accent/10 ring-1 ring-cmd-accent/40"
-                    : "hover:bg-cmd-border/40",
+                    ? "bg-cmd-raised border-l-2 border-l-cmd-bright"
+                    : "border-l-2 border-l-transparent hover:bg-cmd-surface",
                 )}
               >
-                <span className="flex items-center gap-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{ background: colorFor(s.aqi) }}
-                  />
-                  <span>{s.station_name}</span>
-                </span>
-                <span className="font-mono text-xs" style={{ color: colorFor(s.aqi) }}>
+                <span
+                  className="w-2 h-2"
+                  style={{ background: b.gray }}
+                  aria-hidden
+                />
+                <div className="truncate">
+                  <div className="text-cmd-bright font-mono tracking-wide truncate">
+                    {s.station_name.toUpperCase()}
+                  </div>
+                  <div className="text-2xs font-mono uppercase tracking-[0.14em] text-cmd-muted">
+                    {s.zone.replace("_", " ")}
+                  </div>
+                </div>
+                <span
+                  className="text-right font-mono"
+                  style={{ color: b.gray }}
+                >
                   {s.aqi}
+                </span>
+                <span className="text-right font-mono text-cmd-text">
+                  {s.pm25.toFixed(0)}
+                </span>
+                <span className="text-right font-mono text-cmd-text">
+                  {s.pm10.toFixed(0)}
+                </span>
+                <span className="text-right font-mono text-cmd-text">
+                  {s.no2.toFixed(0)}
                 </span>
               </button>
             </li>
           );
         })}
       </ul>
-    </div>
+    </section>
   );
 }

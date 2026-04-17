@@ -1,106 +1,75 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  html,
-  body,
-  #root {
+  html, body, #root {
     height: 100%;
     margin: 0;
-    background: #000;
-    color: #d4d4d4;
+    background: #0f172a;
+    color: #f8fafc;
   }
   body {
-    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      "Helvetica Neue", Arial, sans-serif;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-
-  /* CRT-style subtle grid on the page background */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background-image:
-      linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-    background-size: 48px 48px;
-  }
-
   ::-webkit-scrollbar        { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track  { background: #050505; }
-  ::-webkit-scrollbar-thumb  { background: #2a2a2a; border-radius: 0; }
-  ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+  ::-webkit-scrollbar-track  { background: #0f172a; }
+  ::-webkit-scrollbar-thumb  { background: #334155; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #475569; }
 }
 
 @layer components {
-  .panel {
-    @apply bg-cmd-panel border border-cmd-border;
+  .glass {
+    @apply bg-bg-card/80 border border-border backdrop-blur-sm rounded-2xl;
   }
-  .panel-raised {
-    @apply bg-cmd-raised border border-cmd-line;
+  .glass-sm {
+    @apply bg-bg-card/80 border border-border backdrop-blur-sm rounded-xl;
   }
-  .panel-head {
-    @apply flex items-center justify-between px-3 py-2 border-b border-cmd-border
-      text-2xs font-mono uppercase tracking-[0.14em] text-cmd-dim;
+  .section-title {
+    @apply text-xs font-semibold uppercase tracking-widest text-txt-muted mb-3;
   }
-  .chip {
-    @apply inline-flex items-center gap-1 text-2xs font-mono uppercase
-      tracking-[0.14em] px-2 py-0.5 border border-cmd-line text-cmd-dim;
+  .badge {
+    @apply inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full;
   }
-  .chip-live {
-    @apply chip text-cmd-bright border-cmd-bright;
+  .btn {
+    @apply px-4 py-2 rounded-xl text-sm font-medium transition-all;
   }
-  .kbd {
-    @apply inline-flex items-center justify-center px-1.5 py-0.5 border border-cmd-line
-      text-2xs font-mono text-cmd-dim;
+  .btn-primary {
+    @apply btn bg-accent-blue/20 text-accent-blue border border-accent-blue/30
+      hover:bg-accent-blue/30 hover:border-accent-blue/50;
   }
-  .stat {
-    @apply flex flex-col gap-0.5 px-3 py-2 border-r border-cmd-border;
+  /* Leaflet override – keep map inside its container */
+  .leaflet-container {
+    height: 100%;
+    width: 100%;
+    border-radius: inherit;
+    background: #0f172a;
   }
-  .stat-label {
-    @apply text-2xs font-mono uppercase tracking-[0.14em] text-cmd-muted;
+  .leaflet-popup-content-wrapper {
+    background: #1e293b;
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
-  .stat-value {
-    @apply font-mono text-lg leading-none text-cmd-bright;
-  }
-  .stat-sub {
-    @apply text-2xs font-mono text-cmd-muted;
-  }
-  .hair { @apply border-cmd-border; }
-  .hair-b { @apply border-b border-cmd-border; }
-  .hair-t { @apply border-t border-cmd-border; }
+  .leaflet-popup-tip { background: #1e293b; }
+  .leaflet-popup-close-button { color: #94a3b8 !important; }
 }
 
-/* Crosshair corner markers (Palantir-ish panel emphasis) */
-.corners { position: relative; }
-.corners::before,
-.corners::after {
-  content: "";
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border-color: #3a3a3a;
-  border-style: solid;
-}
-.corners::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
-.corners::after  { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
-
-/* Cesium overrides — strip widgets, grayscale the globe, kill credits */
-.cesium-viewer-toolbar,
-.cesium-viewer-fullscreenContainer,
-.cesium-viewer-animationContainer,
-.cesium-viewer-timelineContainer,
-.cesium-viewer-bottom,
-.cesium-viewer-geocoderContainer,
-.cesium-credit-lightbox,
-.cesium-credit-lightbox-overlay,
-.cesium-widget-credits {
-  display: none !important;
-}
-.cesium-widget, .cesium-widget canvas {
-  filter: grayscale(1) contrast(1.08) brightness(0.85);
+@layer utilities {
+  .text-gradient-blue {
+    background: linear-gradient(135deg, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-health {
+    background: linear-gradient(135deg, #22c55e, #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }

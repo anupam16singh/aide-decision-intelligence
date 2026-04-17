@@ -1,116 +1,114 @@
 import { useMemo, useState } from "react";
 
-import { AlertsPanel } from "./components/AlertsPanel";
-import { AQICard } from "./components/AQICard";
-import { CesiumTwin } from "./components/CesiumTwin";
-import { CityOverview } from "./components/CityOverview";
-import { Navbar } from "./components/Navbar";
-import { PollutantBreakdown } from "./components/PollutantBreakdown";
-import { PredictionChart } from "./components/PredictionChart";
-import { RecommendationPanel } from "./components/RecommendationPanel";
-import { StationList } from "./components/StationList";
-import { useForecast } from "./hooks/useForecast";
-import { useLiveAQI } from "./hooks/useLiveAQI";
+import { Navbar }          from "./components/Navbar";
+import { MapView }         from "./components/MapView";
+import { HeroAQI }         from "./components/HeroAQI";
+import { StationGrid }     from "./components/StationGrid";
+import { ForecastPanel }   from "./components/ForecastPanel";
+import { PollutantGauges } from "./components/PollutantGauges";
+import { MLEnginePanel }   from "./components/MLEnginePanel";
+import { AIAssistant }     from "./components/AIAssistant";
+import { HealthAdvisory }  from "./components/HealthAdvisory";
+import { AlertsFeed }      from "./components/AlertsFeed";
+
+import { useForecast }  from "./hooks/useForecast";
+import { useLiveAQI }   from "./hooks/useLiveAQI";
 
 function defaultSelected(stations: Record<string, any>): string | null {
   const list = Object.values(stations) as any[];
   if (!list.length) return null;
-  list.sort((a, b) => b.aqi - a.aqi);
-  return list[0].station_id;
+  return [...list].sort((a, b) => b.aqi - a.aqi)[0].station_id;
 }
 
 export default function App() {
   const live = useLiveAQI();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const effectiveSelected = selectedId ?? defaultSelected(live.stations);
-  const selected = effectiveSelected ? live.stations[effectiveSelected] ?? null : null;
-  const { forecast } = useForecast(effectiveSelected);
-
-  const stationList = useMemo(() => Object.values(live.stations), [live.stations]);
+  const effectiveId  = selectedId ?? defaultSelected(live.stations);
+  const selected     = effectiveId ? (live.stations[effectiveId] ?? null) : null;
+  const { forecast } = useForecast(effectiveId);
+  const stationList  = useMemo(() => Object.values(live.stations), [live.stations]);
 
   return (
-    <div className="relative z-10 flex flex-col h-screen bg-cmd-bg text-cmd-text">
+    <div className="min-h-screen bg-bg-primary text-txt-primary flex flex-col">
       <Navbar
         regime={live.regime}
         connected={live.connected}
         lastTickAt={live.lastTickAt}
-        stationCount={stationList.length}
         stations={stationList}
-        selectedId={effectiveSelected}
+        selectedId={effectiveId}
         onSelect={(id) => setSelectedId(id)}
       />
 
-      <CityOverview
-        stations={stationList}
-        alerts={live.alerts}
-        recommendations={live.recommendations}
-        model={forecast?.model ?? null}
-        lastTickAt={live.lastTickAt}
-      />
+      <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 md:px-6 py-6 space-y-8">
 
-      <main className="flex-1 grid grid-cols-12 grid-rows-[minmax(0,1fr)_minmax(0,0.6fr)] gap-px bg-cmd-border overflow-hidden">
-        {/* Twin + analytics row */}
-        <section className="col-span-12 xl:col-span-7 row-span-1 bg-cmd-bg flex flex-col min-h-0">
-          <div className="panel-head border-b">
-            <span>00 · Digital Twin — Heat Overlay</span>
-            <span className="text-cmd-muted">
-              {selected
-                ? `Focus: ${selected.station_name.toUpperCase()}`
-                : "Click a station to focus"}
-            </span>
-          </div>
-          <div className="flex-1 min-h-0">
-            <CesiumTwin
+        {/* ── SECTION 1: Map + Hero ── */}
+        <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
+          <div className="rounded-2xl overflow-hidden border border-border-DEFAULT" style={{ height: 480 }}>
+            <MapView
               stations={live.stations}
-              selectedId={effectiveSelected}
+              selectedId={effectiveId}
               onSelect={(id) => setSelectedId(id)}
             />
           </div>
-        </section>
-
-        <aside className="col-span-12 xl:col-span-5 row-span-1 bg-cmd-bg overflow-y-auto min-h-0">
-          <div className="flex flex-col gap-px">
+          <div className="flex flex-col gap-4">
             {selected ? (
-              <>
-                <AQICard reading={selected} />
-                <PredictionChart latest={selected} forecast={forecast} />
-                <PollutantBreakdown reading={selected} />
-                <RecommendationPanel
-                  recommendations={live.recommendations}
-                  filterStationId={effectiveSelected}
-                />
-              </>
+              <HeroAQI reading={selected} forecast={forecast} />
             ) : (
-              <div className="panel p-6 text-sm text-cmd-muted font-mono tracking-wide">
-                · Connecting to live feed ·
+              <div className="glass p-6 flex items-center justify-center text-txt-muted text-sm h-full">
+                Connecting to live feed…
               </div>
             )}
           </div>
-        </aside>
+        </section>
 
-        {/* Bottom row: station matrix + live feed */}
-        <section className="col-span-12 xl:col-span-7 row-span-1 bg-cmd-bg min-h-0">
-          <StationList
+        {/* ── SECTION 2: Pollutant gauges ── */}
+        {selected && <PollutantGauges reading={selected} />}
+
+        {/* ── SECTION 3: Forecast + ML Engine ── */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <ForecastPanel latest={selected} forecast={forecast} />
+          <MLEnginePanel regime={live.regime} forecast={forecast} stations={stationList} />
+        </section>
+
+        {/* ── SECTION 4: AI Assistant + Health Advisory ── */}
+        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <AIAssistant
+            selected={selected}
+            forecast={forecast}
+            regime={live.regime}
             stations={stationList}
-            selectedId={effectiveSelected}
-            onSelect={(id) => setSelectedId(id)}
+          />
+          <HealthAdvisory
+            selected={selected}
+            recommendations={live.recommendations}
           />
         </section>
 
-        <section className="col-span-12 xl:col-span-5 row-span-1 bg-cmd-bg min-h-0">
-          <AlertsPanel alerts={live.alerts} />
-        </section>
+        {/* ── SECTION 5: Station grid ── */}
+        <StationGrid
+          stations={stationList}
+          selectedId={effectiveId}
+          onSelect={(id) => setSelectedId(id)}
+        />
+
+        {/* ── SECTION 6: Alerts ── */}
+        <AlertsFeed alerts={live.alerts} />
+
       </main>
 
-      <footer className="border-t border-cmd-border bg-cmd-bg px-4 py-1.5 flex items-center justify-between text-2xs font-mono text-cmd-muted tracking-[0.18em]">
-        <span>AIRTWIN // AIDE — REGIME-AWARE AIR QUALITY COMMAND</span>
-        <span>
-          {live.connected ? "◉ LIVE" : "○ OFFLINE"} · WS 7s ·{" "}
-          {live.lastTickAt
-            ? new Date(live.lastTickAt).toLocaleTimeString([], { hour12: false })
-            : "--:--:--"}
-        </span>
+      {/* Footer */}
+      <footer className="border-t border-border-DEFAULT bg-bg-secondary py-4 px-6">
+        <div className="max-w-screen-2xl mx-auto flex items-center justify-between text-xs text-txt-dim">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-accent-blue animate-pulse" />
+            AirTwin India · AI Digital Twin · Powered by AIDE Framework
+          </div>
+          <div className="font-mono">
+            {live.connected ? "◉ LIVE" : "○ OFFLINE"} · WS 7s ·{" "}
+            RF+LSTM+HMM Ensemble · Delhi NCR
+          </div>
+        </div>
       </footer>
     </div>
   );

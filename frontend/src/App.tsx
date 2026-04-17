@@ -30,7 +30,7 @@ export default function App() {
   const stationList  = useMemo(() => Object.values(live.stations), [live.stations]);
 
   return (
-    <div className="min-h-screen bg-bg-primary text-txt-primary flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden bg-bg-primary">
       <Navbar
         regime={live.regime}
         connected={live.connected}
@@ -40,76 +40,71 @@ export default function App() {
         onSelect={(id) => setSelectedId(id)}
       />
 
-      <main className="flex-1 max-w-screen-2xl mx-auto w-full px-4 md:px-6 py-6 space-y-8">
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left panel: map (58%) */}
+        <div className="relative flex-shrink-0" style={{ width: "58%" }}>
+          <MapView
+            stations={live.stations}
+            selectedId={effectiveId}
+            onSelect={(id) => setSelectedId(id)}
+          />
+        </div>
 
-        {/* ── SECTION 1: Map + Hero ── */}
-        <section className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
-          <div className="rounded-2xl overflow-hidden border border-border-DEFAULT" style={{ height: 480 }}>
-            <MapView
-              stations={live.stations}
-              selectedId={effectiveId}
-              onSelect={(id) => setSelectedId(id)}
-            />
-          </div>
-          <div className="flex flex-col gap-4">
+        {/* Right panel: scrollable info (42%) */}
+        <div className="overflow-y-auto bg-bg-primary" style={{ width: "42%" }}>
+          <div className="p-4 space-y-4">
+
+            {/* AQI Hero */}
             {selected ? (
               <HeroAQI reading={selected} forecast={forecast} />
             ) : (
-              <div className="glass p-6 flex items-center justify-center text-txt-muted text-sm h-full">
+              <div className="glass p-8 flex items-center justify-center text-txt-muted text-sm">
                 Connecting to live feed…
               </div>
             )}
-          </div>
-        </section>
 
-        {/* ── SECTION 2: Pollutant gauges ── */}
-        {selected && <PollutantGauges reading={selected} />}
+            {/* Pollutant bars */}
+            {selected && <PollutantGauges reading={selected} />}
 
-        {/* ── SECTION 3: Forecast + ML Engine ── */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <ForecastPanel latest={selected} forecast={forecast} />
-          <MLEnginePanel regime={live.regime} forecast={forecast} stations={stationList} />
-        </section>
+            {/* Forecast chart */}
+            <ForecastPanel latest={selected} forecast={forecast} />
 
-        {/* ── SECTION 4: AI Assistant + Health Advisory ── */}
-        <section className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <AIAssistant
-            selected={selected}
-            forecast={forecast}
-            regime={live.regime}
-            stations={stationList}
-          />
-          <HealthAdvisory
-            selected={selected}
-            recommendations={live.recommendations}
-          />
-        </section>
+            {/* ML Engine */}
+            <MLEnginePanel regime={live.regime} forecast={forecast} stations={stationList} />
 
-        {/* ── SECTION 5: Station grid ── */}
-        <StationGrid
-          stations={stationList}
-          selectedId={effectiveId}
-          onSelect={(id) => setSelectedId(id)}
-        />
+            {/* Health advisory */}
+            {selected && (
+              <HealthAdvisory
+                selected={selected}
+                recommendations={live.recommendations}
+              />
+            )}
 
-        {/* ── SECTION 6: Alerts ── */}
-        <AlertsFeed alerts={live.alerts} />
+            {/* All stations */}
+            <StationGrid
+              stations={stationList}
+              selectedId={effectiveId}
+              onSelect={(id) => setSelectedId(id)}
+            />
 
-      </main>
+            {/* Alerts feed */}
+            <AlertsFeed alerts={live.alerts} />
 
-      {/* Footer */}
-      <footer className="border-t border-border-DEFAULT bg-bg-secondary py-4 px-6">
-        <div className="max-w-screen-2xl mx-auto flex items-center justify-between text-xs text-txt-dim">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-accent-blue animate-pulse" />
-            AirTwin India · AI Digital Twin · Powered by AIDE Framework
-          </div>
-          <div className="font-mono">
-            {live.connected ? "◉ LIVE" : "○ OFFLINE"} · WS 7s ·{" "}
-            RF+LSTM+HMM Ensemble · Delhi NCR
+            {/* Footer */}
+            <div className="text-center text-xs text-txt-dim py-2 border-t border-border">
+              AirTwin India · AIDE Framework · Delhi NCR · RF+LSTM+HMM Ensemble
+            </div>
           </div>
         </div>
-      </footer>
+      </div>
+
+      {/* Floating AI Assistant */}
+      <AIAssistant
+        selected={selected}
+        forecast={forecast}
+        regime={live.regime}
+        stations={stationList}
+      />
     </div>
   );
 }

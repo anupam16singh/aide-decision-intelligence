@@ -1,12 +1,10 @@
-import { useMemo, useRef, useState } from "react";
-import clsx from "clsx";
 import { bandFor } from "../lib/aqi";
 import type { Regime, StationReading } from "../lib/types";
 
-const REGIME_STYLE: Record<Regime, { label: string; cls: string }> = {
-  calm:       { label: "Calm",       cls: "bg-aqi-good/20     text-aqi-good     border-aqi-good/40"     },
-  transition: { label: "Transition", cls: "bg-aqi-moderate/20 text-aqi-moderate border-aqi-moderate/40" },
-  stress:     { label: "Stress",     cls: "bg-aqi-veryPoor/20 text-aqi-veryPoor border-aqi-veryPoor/40" },
+const REGIME_STYLE: Record<Regime, { label: string; bg: string; color: string }> = {
+  calm:       { label: "Calm",       bg: "rgba(255,255,255,0.2)", color: "#fff" },
+  transition: { label: "Transition", bg: "rgba(255,255,255,0.2)", color: "#fde68a" },
+  stress:     { label: "Stress",     bg: "rgba(255,255,255,0.2)", color: "#fca5a5" },
 };
 
 interface Props {
@@ -19,121 +17,83 @@ interface Props {
 }
 
 export function Navbar({ regime, connected, lastTickAt, stations, selectedId, onSelect }: Props) {
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
   const rs = REGIME_STYLE[regime];
-
-  const matches = useMemo(() => {
-    const q = query.toLowerCase();
-    return stations
-      .filter((s) => !q || s.station_name.toLowerCase().includes(q) || s.zone.toLowerCase().includes(q))
-      .sort((a, b) => b.aqi - a.aqi)
-      .slice(0, 7);
-  }, [query, stations]);
-
   const avgAqi = stations.length
     ? Math.round(stations.reduce((s, x) => s + x.aqi, 0) / stations.length)
     : 0;
+  const cityBand = bandFor(avgAqi);
 
   return (
-    <header className="sticky top-0 z-50 bg-gradient-navbar border-b border-border-DEFAULT backdrop-blur-md">
-      <div className="max-w-screen-2xl mx-auto flex items-center gap-4 px-6 h-16">
+    <header className="flex-shrink-0 bg-gradient-navbar text-white z-50 shadow-md">
+      <div className="flex items-center gap-3 px-4 h-14">
         {/* Brand */}
-        <div className="flex items-center gap-3 min-w-fit">
-          <div className="relative w-9 h-9 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full bg-accent-blue/20 animate-pulse2" />
-            <svg viewBox="0 0 32 32" className="w-6 h-6 relative z-10">
-              <circle cx="16" cy="16" r="14" fill="none" stroke="#38bdf8" strokeWidth="2" />
-              <circle cx="16" cy="16" r="7" fill="#38bdf8" opacity="0.6" />
-              <circle cx="16" cy="16" r="3" fill="#38bdf8" />
+        <div className="flex items-center gap-2.5 min-w-fit">
+          <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
+            <svg viewBox="0 0 32 32" className="w-5 h-5">
+              <circle cx="16" cy="16" r="12" fill="none" stroke="white" strokeWidth="2.5" />
+              <circle cx="16" cy="16" r="5" fill="white" opacity="0.7" />
+              <circle cx="16" cy="16" r="2" fill="white" />
             </svg>
           </div>
           <div>
-            <div className="font-bold text-base text-gradient-blue tracking-tight">
-              AirTwin India
-            </div>
-            <div className="text-2xs text-txt-muted tracking-wider">AI Pollution Command</div>
+            <div className="font-bold text-sm leading-tight">AirTwin India</div>
+            <div className="text-white/60 text-[10px] leading-tight">AI Air Quality Twin</div>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="relative flex-1 max-w-md">
-          <div className="flex items-center gap-2 bg-bg-secondary border border-border-DEFAULT rounded-xl px-3 py-2">
-            <svg className="w-4 h-4 text-txt-muted flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <circle cx="11" cy="11" r="7" strokeWidth="2" />
-              <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <input
-              ref={inputRef}
-              value={query}
-              placeholder="Search stations or zones…"
-              onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
-              onFocus={() => setOpen(true)}
-              onBlur={() => setTimeout(() => setOpen(false), 150)}
-              className="bg-transparent flex-1 text-sm text-txt-primary placeholder:text-txt-muted outline-none"
-            />
-          </div>
-          {open && matches.length > 0 && (
-            <div className="absolute top-full mt-1 left-0 right-0 bg-bg-secondary border border-border-DEFAULT rounded-xl overflow-hidden z-50 shadow-card">
-              {matches.map((s) => {
-                const b = bandFor(s.aqi);
-                return (
-                  <button
-                    key={s.station_id}
-                    onMouseDown={() => { onSelect(s.station_id); setOpen(false); setQuery(""); }}
-                    className={clsx(
-                      "w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-bg-elevated transition-colors",
-                      s.station_id === selectedId && "bg-bg-elevated",
-                    )}
-                  >
-                    <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: b.color }} />
-                    <span className="flex-1">
-                      <div className="text-sm font-medium text-txt-primary">{s.station_name}</div>
-                      <div className="text-xs text-txt-muted capitalize">{s.zone.replace("_", " ")}</div>
-                    </span>
-                    <span className="font-mono text-sm font-bold" style={{ color: b.color }}>
-                      {s.aqi}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+        {/* Station chips — scrollable horizontal */}
+        <div className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none min-w-0 mx-2">
+          {stations.slice().sort((a, b) => b.aqi - a.aqi).map((s) => {
+            const b = bandFor(s.aqi);
+            const isActive = s.station_id === selectedId;
+            return (
+              <button
+                key={s.station_id}
+                onClick={() => onSelect(s.station_id)}
+                className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium transition-all"
+                style={{
+                  background: isActive ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.12)",
+                  color: isActive ? "#fff" : "rgba(255,255,255,0.8)",
+                  border: isActive ? "1px solid rgba(255,255,255,0.5)" : "1px solid rgba(255,255,255,0.15)",
+                }}
+              >
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: b.color }} />
+                <span className="truncate max-w-[90px]">{s.station_name.replace(" Station", "")}</span>
+                <span className="font-bold font-mono" style={{ color: b.color }}>{s.aqi}</span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* Stats */}
-        <div className="hidden md:flex items-center gap-3 ml-auto">
-          <StatChip label="Delhi NCR" value="12 Stations" />
-          <StatChip label="City AQI" value={String(avgAqi)} valueColor={bandFor(avgAqi).color} />
-          <span className={clsx("badge border text-xs font-semibold", rs.cls)}>
+        {/* Right: stats + status */}
+        <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 text-xs">
+            <span className="text-white/70">Delhi avg</span>
+            <span className="font-bold font-mono" style={{ color: cityBand.color }}>{avgAqi}</span>
+          </div>
+
+          <div className="px-2.5 py-1 rounded-full text-xs font-semibold"
+            style={{ background: rs.bg, color: rs.color, border: "1px solid rgba(255,255,255,0.2)" }}>
             {rs.label}
-          </span>
-          <div className={clsx(
-            "flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full border",
-            connected
-              ? "bg-aqi-good/15 text-aqi-good border-aqi-good/30"
-              : "bg-red-500/15 text-red-400 border-red-500/30",
-          )}>
-            <span className={clsx("w-2 h-2 rounded-full", connected ? "bg-aqi-good animate-pulse" : "bg-red-400")} />
-            {connected ? "LIVE" : "OFFLINE"}
           </div>
+
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            <span
+              className="w-2 h-2 rounded-full"
+              style={{ background: connected ? "#4ade80" : "#f87171" }}
+            />
+            <span className="text-white/80 hidden sm:inline">
+              {connected ? "LIVE" : "OFFLINE"}
+            </span>
+          </div>
+
           {lastTickAt && (
-            <span className="text-xs text-txt-muted font-mono hidden lg:block">
+            <span className="text-[10px] text-white/50 font-mono hidden lg:inline">
               {new Date(lastTickAt).toLocaleTimeString([], { hour12: false })}
             </span>
           )}
         </div>
       </div>
     </header>
-  );
-}
-
-function StatChip({ label, value, valueColor }: { label: string; value: string; valueColor?: string }) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-secondary border border-border-DEFAULT rounded-xl">
-      <span className="text-xs text-txt-muted">{label}</span>
-      <span className="text-xs font-bold" style={valueColor ? { color: valueColor } : undefined}>{value}</span>
-    </div>
   );
 }

@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import { bandFor } from "../lib/aqi";
 import type { StationReading } from "../lib/types";
 
@@ -12,9 +11,11 @@ export function StationGrid({ stations, selectedId, onSelect }: Props) {
   const sorted = [...stations].sort((a, b) => b.aqi - a.aqi);
 
   return (
-    <section>
-      <div className="section-title">All Monitoring Stations</div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
+    <div className="glass overflow-hidden">
+      <div className="px-4 pt-4 pb-2">
+        <div className="section-title mb-0">All Monitoring Stations</div>
+      </div>
+      <div className="divide-y divide-border">
         {sorted.map((s) => {
           const b = bandFor(s.aqi);
           const isActive = s.station_id === selectedId;
@@ -22,40 +23,49 @@ export function StationGrid({ stations, selectedId, onSelect }: Props) {
             <button
               key={s.station_id}
               onClick={() => onSelect(s.station_id)}
-              className={clsx(
-                "glass-sm p-3 text-left transition-all hover:scale-[1.02] active:scale-100",
-                "border-l-4",
-                isActive && "ring-2",
-              )}
+              className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-bg-secondary"
               style={{
-                borderLeftColor: b.color,
                 background: isActive ? b.bg : undefined,
-                boxShadow: isActive ? `0 0 20px ${b.glow}` : undefined,
-                ...(isActive ? { "--tw-ring-color": b.color + "66" } as any : {}),
+                borderLeft: isActive ? `3px solid ${b.color}` : "3px solid transparent",
               }}
             >
-              <div className="font-mono text-2xl font-bold mb-0.5" style={{ color: b.color }}>
-                {s.aqi}
+              {/* AQI number */}
+              <div className="w-12 flex-shrink-0 text-center">
+                <div className="font-mono font-bold text-lg leading-tight" style={{ color: b.color }}>
+                  {s.aqi}
+                </div>
+                <div
+                  className="text-[9px] font-semibold px-1 py-0.5 rounded-full"
+                  style={{ background: b.bg, color: b.text }}
+                >
+                  {b.label}
+                </div>
               </div>
-              <div className="text-xs font-semibold text-txt-primary leading-tight truncate">
-                {s.station_name}
+
+              {/* Name + zone */}
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-txt-primary truncate">
+                  {s.station_name}
+                </div>
+                <div className="text-xs text-txt-muted capitalize">
+                  {s.zone.replace("_", " ")}
+                </div>
               </div>
-              <div className="text-[10px] text-txt-muted capitalize mt-0.5 truncate">
-                {s.zone.replace("_", " ")}
+
+              {/* PM2.5 */}
+              <div className="flex-shrink-0 text-right">
+                <div className="text-xs text-txt-muted">PM2.5</div>
+                <div className="text-sm font-semibold text-txt-secondary font-mono">
+                  {s.pm25.toFixed(0)}
+                </div>
               </div>
-              <div
-                className="mt-2 text-[10px] font-semibold px-1.5 py-0.5 rounded-full inline-block"
-                style={{ background: b.bg, color: b.text }}
-              >
-                {b.label}
-              </div>
-              <div className="mt-1.5 text-[10px] text-txt-dim font-mono">
-                PM2.5 {s.pm25.toFixed(0)} µg/m³
-              </div>
+
+              {/* Emoji */}
+              <div className="text-lg flex-shrink-0">{b.emoji}</div>
             </button>
           );
         })}
       </div>
-    </section>
+    </div>
   );
 }

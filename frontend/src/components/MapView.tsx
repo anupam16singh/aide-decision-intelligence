@@ -27,11 +27,11 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
       attributionControl: true,
     });
 
-    // CartoDB Dark Matter – matches the dark UI
+    // CartoDB Voyager — colourful, friendly tiles
     L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
       {
-        attribution: '© <a href="https://carto.com/">CARTO</a> | AirTwin India',
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
         subdomains: "abcd",
         maxZoom: 19,
       },
@@ -40,7 +40,6 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
     L.control.zoom({ position: "bottomright" }).addTo(map);
 
     map.on("click", (e: L.LeafletMouseEvent) => {
-      // If clicked on map background (not a marker), deselect
       const target = e.originalEvent.target as HTMLElement;
       if (target.tagName === "CANVAS" || target.classList.contains("leaflet-pane")) {
         onSelect(null);
@@ -66,7 +65,7 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
       const b = bandFor(r.aqi);
       const isSelected = r.station_id === selectedId;
       const intensity = Math.min(1, r.aqi / 500);
-      const haloRadius = 3000 + intensity * 7000;
+      const haloRadius = 2500 + intensity * 6000;
       const latlng = L.latLng(r.lat, r.lng);
 
       if (layersRef.current[r.station_id]) {
@@ -74,61 +73,65 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
         marker.setLatLng(latlng);
         marker.setStyle({
           fillColor: color,
-          color: isSelected ? "#ffffff" : color,
-          fillOpacity: isSelected ? 1 : 0.9,
+          color: isSelected ? "#fff" : color,
+          fillOpacity: isSelected ? 1 : 0.85,
           weight: isSelected ? 3 : 1.5,
           radius: isSelected ? 14 : r.aqi > 300 ? 11 : 8,
         });
         halo.setLatLng(latlng);
         halo.setRadius(haloRadius);
-        halo.setStyle({ color, fillColor: color, fillOpacity: 0.08 + intensity * 0.14 });
+        halo.setStyle({ color, fillColor: color, fillOpacity: 0.07 + intensity * 0.12 });
       } else {
-        // Halo (heatmap circle)
         const halo = L.circle(latlng, {
           radius: haloRadius,
           color,
           fillColor: color,
-          fillOpacity: 0.08 + intensity * 0.14,
+          fillOpacity: 0.07 + intensity * 0.12,
           weight: 0,
           interactive: false,
         }).addTo(map);
 
-        // Station marker
         const marker = L.circleMarker(latlng, {
           radius: r.aqi > 300 ? 11 : 8,
           fillColor: color,
-          color: color,
+          color,
           weight: 1.5,
-          fillOpacity: 0.9,
+          fillOpacity: 0.85,
         }).addTo(map);
 
         marker.bindPopup(() => {
           const div = document.createElement("div");
-          div.style.minWidth = "180px";
+          div.style.minWidth = "190px";
+          div.style.padding = "14px 16px";
           div.innerHTML = `
             <div style="font-family:Inter,sans-serif">
-              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;">${r.zone.replace("_"," ")}</div>
-              <div style="font-size:15px;font-weight:700;color:#f8fafc;margin:4px 0;">${r.station_name}</div>
-              <div style="display:flex;align-items:baseline;gap:6px;">
-                <span style="font-size:32px;font-weight:800;color:${color};line-height:1">${r.aqi}</span>
-                <span style="font-size:13px;color:${color}">${b.label}</span>
+              <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">${r.zone.replace("_"," ")}</div>
+              <div style="font-size:15px;font-weight:700;color:#f8fafc;margin-bottom:6px;">${r.station_name}</div>
+              <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px;">
+                <span style="font-size:34px;font-weight:800;color:${color};line-height:1">${r.aqi}</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:${color}">${b.label}</div>
+                  <div style="font-size:10px;color:#64748b">AQI</div>
+                </div>
               </div>
-              <hr style="border-color:#334155;margin:8px 0;"/>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:12px;">
-                <div><span style="color:#64748b">PM2.5</span> <span style="color:#f8fafc;font-weight:600">${r.pm25.toFixed(0)}</span></div>
-                <div><span style="color:#64748b">PM10</span> <span style="color:#f8fafc;font-weight:600">${r.pm10.toFixed(0)}</span></div>
-                <div><span style="color:#64748b">NO₂</span> <span style="color:#f8fafc;font-weight:600">${r.no2.toFixed(0)}</span></div>
-                <div><span style="color:#64748b">Temp</span> <span style="color:#f8fafc;font-weight:600">${r.temp.toFixed(1)}°C</span></div>
+              <div style="height:1px;background:#334155;margin-bottom:8px;"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px;">
+                <div><span style="color:#64748b">PM2.5</span> <span style="color:#e2e8f0;font-weight:600">${r.pm25.toFixed(0)}</span></div>
+                <div><span style="color:#64748b">PM10</span> <span style="color:#e2e8f0;font-weight:600">${r.pm10.toFixed(0)}</span></div>
+                <div><span style="color:#64748b">NO₂</span> <span style="color:#e2e8f0;font-weight:600">${r.no2.toFixed(0)}</span></div>
+                <div><span style="color:#64748b">Temp</span> <span style="color:#e2e8f0;font-weight:600">${r.temp.toFixed(1)}°C</span></div>
               </div>
               <button
                 onclick="document.dispatchEvent(new CustomEvent('airtwin:select',{detail:'${r.station_id}'}))"
-                style="margin-top:10px;width:100%;background:${color}22;border:1px solid ${color}44;
-                  color:${color};border-radius:8px;padding:6px;font-size:12px;font-weight:600;cursor:pointer;"
+                style="width:100%;background:${color}22;border:1px solid ${color}55;
+                  color:${color};border-radius:8px;padding:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+                onmouseover="this.style.background='${color}33'"
+                onmouseout="this.style.background='${color}22'"
               >View Details →</button>
             </div>
           `;
           return div;
-        });
+        }, { maxWidth: 240 });
 
         marker.on("click", () => onSelect(r.station_id));
 
@@ -137,7 +140,6 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
     }
   }, [stations, selectedId, onSelect]);
 
-  // Listen for popup button events
   useEffect(() => {
     const handler = (e: Event) => onSelect((e as CustomEvent).detail);
     document.addEventListener("airtwin:select", handler);
@@ -145,20 +147,20 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
   }, [onSelect]);
 
   return (
-    <div className="relative w-full h-full rounded-2xl overflow-hidden">
+    <div className="relative w-full h-full">
       <div ref={containerRef} className="w-full h-full" />
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-[1000] glass-sm px-3 py-2.5 text-xs">
+      {/* AQI Legend */}
+      <div className="absolute bottom-4 left-4 z-[1000] bg-white rounded-xl shadow-card px-3 py-2.5 text-xs border border-border">
         <div className="text-txt-muted font-semibold mb-2 uppercase tracking-wider text-[10px]">AQI Scale</div>
         <div className="space-y-1.5">
           {[
-            { label: "Good 0–50",         color: "#22c55e" },
-            { label: "Satisfactory 51–100", color: "#a3e635" },
-            { label: "Moderate 101–200",  color: "#facc15" },
-            { label: "Poor 201–300",      color: "#fb923c" },
-            { label: "Very Poor 301–400", color: "#f87171" },
-            { label: "Severe 400+",       color: "#c084fc" },
+            { label: "Good 0–50",           color: "#16a34a" },
+            { label: "Satisfactory 51–100", color: "#65a30d" },
+            { label: "Moderate 101–200",    color: "#d97706" },
+            { label: "Poor 201–300",        color: "#ea580c" },
+            { label: "Very Poor 301–400",   color: "#dc2626" },
+            { label: "Severe 400+",         color: "#9333ea" },
           ].map((r) => (
             <div key={r.label} className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: r.color }} />
@@ -168,9 +170,9 @@ export function MapView({ stations, selectedId, onSelect }: Props) {
         </div>
       </div>
 
-      {/* Heat toggle label */}
-      <div className="absolute top-4 right-4 z-[1000] glass-sm px-3 py-1.5 text-xs text-txt-muted">
-        2D View • Heatmap Active
+      {/* Map badge */}
+      <div className="absolute top-3 right-3 z-[1000] bg-white/90 rounded-lg shadow px-2.5 py-1 text-[10px] text-txt-muted border border-border font-medium">
+        2D Map · Heatmap
       </div>
     </div>
   );
